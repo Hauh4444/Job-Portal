@@ -1,0 +1,9 @@
+/out/
+/libs/
+*.class
+*.log
+*.jar
+*.war
+.idea/
+*.iml
+*.DS_Store
