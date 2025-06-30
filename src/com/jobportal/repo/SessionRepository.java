@@ -1,6 +1,6 @@
 package com.jobportal.repo;
 
-import com.jobportal.domain.Job;
+import com.jobportal.domain.Session;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoClient;
@@ -19,11 +19,11 @@ import com.mongodb.client.model.Filters;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JobRepository {
-    // MongoCollection representing the "jobs" collection with documents mapped to Job class
-    private final MongoCollection<Job> jobs;
+public class SessionRepository {
+    // MongoCollection representing the "sessions" collection with documents mapped to Session class
+    private final MongoCollection<Session> sessions;
 
-    public JobRepository() {
+    public SessionRepository() {
         // Create a CodecRegistry with automatic POJO mapping enabled
         CodecRegistry pojoCodecRegistry = fromProviders(PojoCodecProvider.builder().automatic(true).build());
         // Combine the default CodecRegistry with the POJO CodecRegistry
@@ -39,36 +39,19 @@ public class JobRepository {
         MongoClient client = MongoClients.create(settings);
         // Connect to the "jobportal" database
         MongoDatabase db = client.getDatabase("jobportal");
-        // Get the "jobs" collection from the database, mapping documents to Job objects
-        jobs = db.getCollection("jobs", Job.class);
+        // Get the "sessions" collection from the database, mapping documents to Session objects
+        sessions = db.getCollection("sessions", Session.class);
     }
 
-    /**
-     * Retrieve all Job documents from the collection.
-     *
-     * @return List of all Job objects found
-     */
-    public List<Job> findAll() {
-        // Find all documents and collect them into a List
-        return jobs.find().into(new ArrayList<>());
+    public Session findBySessionToken(String sessionToken) {
+        return sessions.find(Filters.eq("sessionToken", sessionToken)).first();
     }
 
-    /**
-     * Insert a new Job document into the collection.
-     *
-     * @param job the Job object to insert
-     */
-    public void insert(Job job) {
-        jobs.insertOne(job);
+    public void insert(Session session) {
+        sessions.insertOne(session);
     }
 
-    /**
-     * Delete a Job document by its MongoDB _id.
-     *
-     * @param id the String representation of the ObjectId to delete
-     */
     public void delete(String id) {
-        // Convert string id to ObjectId and delete matching document
-        jobs.deleteOne(Filters.eq("_id", new ObjectId(id)));
+        sessions.deleteOne(Filters.eq("_id", new ObjectId(id)));
     }
 }

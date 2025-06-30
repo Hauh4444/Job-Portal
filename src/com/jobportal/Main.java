@@ -6,7 +6,7 @@ public class Main {
     // Main entry point of the application
     public static void main(String[] args) {
         try {
-            // Start the HTTP server (listens on port 8080)
+            // Start the HTTP server (listens on port 7000)
             new HttpServer();
         } catch (Exception e) {
             // Print error if server fails to start

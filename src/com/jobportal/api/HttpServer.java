@@ -2,7 +2,9 @@ package com.jobportal.api;
 
 import fi.iki.elonen.NanoHTTPD;
 import com.jobportal.api.routes.RouteHandler;
+import com.jobportal.api.routes.AuthRoutes;
 import com.jobportal.api.routes.JobRoutes;
+import com.jobportal.api.routes.UserRoutes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,15 +15,17 @@ public class HttpServer extends NanoHTTPD {
     private final List<RouteHandler> routeHandlers = new ArrayList<>();
 
     public HttpServer() throws IOException {
-        super(8080); // Initialize server on port 8080
+        super(7000); // Initialize server on port 7000
 
         // Register all route handlers here
+        routeHandlers.add(new AuthRoutes());
         routeHandlers.add(new JobRoutes());
+        routeHandlers.add(new UserRoutes());
 
         // Start the server with default socket timeout and non-daemon thread
         start(SOCKET_READ_TIMEOUT, false);
 
-        System.out.println("Listening on http://localhost:8080");
+        System.out.println("Listening on http://localhost:7000");
     }
 
     /**
