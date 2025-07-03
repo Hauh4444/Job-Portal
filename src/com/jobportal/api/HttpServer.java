@@ -15,7 +15,7 @@ public class HttpServer extends NanoHTTPD {
     private final List<RouteHandler> routeHandlers = new ArrayList<>();
 
     public HttpServer() throws IOException {
-        super(7000); // Initialize server on port 7000
+        super("0.0.0.0", 7000); // Initialize server on port 7000
 
         // Register all route handlers here
         routeHandlers.add(new AuthRoutes());
@@ -25,7 +25,7 @@ public class HttpServer extends NanoHTTPD {
         // Start the server with default socket timeout and non-daemon thread
         start(SOCKET_READ_TIMEOUT, false);
 
-        System.out.println("Listening on http://localhost:7000");
+        System.out.println("Listening on http://0.0.0.0:7000");
     }
 
     /**

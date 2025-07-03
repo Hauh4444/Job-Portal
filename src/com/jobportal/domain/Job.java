@@ -23,6 +23,9 @@ public class Job {
     // Type of employment (e.g. Full-time, Part-time, Contract)
     private String employmentType;
 
+    // Type of work model (e.g. Remote, On-Site, Hybrid)
+    private String workModel;
+
     // Minimum salary offered
     private float salaryMin;
 
@@ -43,9 +46,6 @@ public class Job {
 
     // Date when the job posting expires
     private Date expiresAt;
-
-    // Flag indicating if the job is remote
-    private boolean isRemote;
 
     // Contact email for applications
     private String contactEmail;
@@ -91,6 +91,14 @@ public class Job {
 
     public void setEmploymentType(String employmentType) {
         this.employmentType = employmentType;
+    }
+
+    public String getWorkModel() {
+        return workModel;
+    }
+
+    public void setWorkModel(String workModel) {
+        this.workModel = workModel;
     }
 
     public float getSalaryMin() {
@@ -147,14 +155,6 @@ public class Job {
 
     public void setExpiresAt(Date expiresAt) {
         this.expiresAt = expiresAt;
-    }
-
-    public boolean isRemote() {
-        return isRemote;
-    }
-
-    public void setRemote(boolean remote) {
-        isRemote = remote;
     }
 
     public String getContactEmail() {
