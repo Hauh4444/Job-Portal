@@ -3,13 +3,11 @@ package com.jobportal;
 import com.jobportal.api.HttpServer;
 
 public class Main {
-    // Main entry point of the application
+    // Application entry point
     public static void main(String[] args) {
         try {
-            // Start the HTTP server (listens on port 7000)
             new HttpServer();
         } catch (Exception e) {
-            // Print error if server fails to start
             System.err.println("Failed to start server: " + e.getMessage());
             e.printStackTrace();
         }

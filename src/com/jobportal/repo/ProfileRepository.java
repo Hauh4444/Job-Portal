@@ -1,12 +1,13 @@
 package com.jobportal.repo;
 
-import com.jobportal.domain.Session;
+import com.jobportal.domain.Profile;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 
@@ -18,10 +19,10 @@ import static org.bson.codecs.configuration.CodecRegistries.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SessionRepository {
-    private final MongoCollection<Session> sessions;
+public class ProfileRepository {
+    private final MongoCollection<Profile> profiles;
 
-    public SessionRepository() {
+    public ProfileRepository() {
         CodecRegistry pojoCodecRegistry = fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
         ConnectionString connString = new ConnectionString("mongodb://localhost:27017/jobportal");
@@ -31,18 +32,14 @@ public class SessionRepository {
                 .build();
         MongoClient client = MongoClients.create(settings);
         MongoDatabase db = client.getDatabase("jobportal");
-        sessions = db.getCollection("sessions", Session.class);
+        profiles = db.getCollection("profiles", Profile.class);
     }
 
-    public Session findBySessionToken(String sessionToken) {
-        return sessions.find(Filters.eq("sessionToken", sessionToken)).first();
+    public Profile findByUserId(ObjectId userId) {
+        return profiles.find(Filters.eq("userId", userId)).first();
     }
 
-    public void insert(Session session) {
-        sessions.insertOne(session);
-    }
-
-    public void delete(String id) {
-        sessions.deleteOne(Filters.eq("_id", new ObjectId(id)));
+    public void updateResume(ObjectId userId, String resume) {
+        profiles.updateOne(Filters.eq("userId", userId), Updates.set("resume", resume));
     }
 }

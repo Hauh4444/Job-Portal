@@ -6,24 +6,16 @@ import org.bson.codecs.pojo.annotations.BsonId;
 import java.util.Date;
 
 public class Session {
-    // MongoDB document ID, annotated as BSON ID for automatic mapping
+    public Session() {}
+
+
     @BsonId
     private ObjectId id;
-
-    // Id of the user
     private ObjectId userId;
-
-    // Session token used for authentication
     private String sessionToken;
-
-    // Datetime of the creation of the session
     private Date createdAt;
-
-    // Datetime of the expiration of the session
     private Date expiresAt;
 
-    // No-argument constructor required for POJO mapping by MongoDB driver
-    public Session() {}
 
     public ObjectId getId() {
         return id;

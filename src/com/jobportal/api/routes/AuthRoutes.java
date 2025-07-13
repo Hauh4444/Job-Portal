@@ -1,10 +1,12 @@
 package com.jobportal.api.routes;
 
-import com.google.gson.Gson;
 import com.jobportal.domain.User;
 import com.jobportal.domain.Session;
 import com.jobportal.repo.UserRepository;
 import com.jobportal.repo.SessionRepository;
+
+import com.google.gson.Gson;
+
 import fi.iki.elonen.NanoHTTPD;
 
 import java.util.HashMap;
@@ -14,12 +16,8 @@ import java.util.UUID;
 import java.util.Date;
 
 public class AuthRoutes implements RouteHandler {
-    // Gson instance for JSON serialization/deserialization
     private final Gson gson = new Gson();
-
-    // Repository for interacting with User data in MongoDB
     private final UserRepository userRepo = new UserRepository();
-    // Repository for interacting with Session data in MongoDB
     private final SessionRepository sessionRepo = new SessionRepository();
 
     /**
@@ -34,18 +32,17 @@ public class AuthRoutes implements RouteHandler {
         NanoHTTPD.Method method = session.getMethod();
         String uri = session.getUri();
 
-        // Only handle requests for "/auth"
-        if (!uri.startsWith("/auth")) return null; // Not handled here, let other handlers try
+        final String endpoint = "/auth";
+        String subPath = uri.substring(endpoint.length());
 
-        String subPath = uri.substring("/auth".length());
+        if (!uri.startsWith(endpoint)) return null;
 
-        if ("/check_auth_status".equals(subPath) && method == NanoHTTPD.Method.GET) {
+        if (subPath.equals("/check_auth_status") && method == NanoHTTPD.Method.GET) {
             String authHeader = session.getHeaders().get("authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
             }
             String sessionToken = authHeader.substring("Bearer ".length());
-
             Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
             if (sessionObj == null) {
                 return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
@@ -64,16 +61,15 @@ public class AuthRoutes implements RouteHandler {
             return json(gson.toJson(Map.of("id", user.getId(), "username", user.getUsername())));
         }
 
-        if ("/login".equals(subPath) && method == NanoHTTPD.Method.POST) {
+        // POST /auth/login
+        if (subPath.equals("/login") && method == NanoHTTPD.Method.POST) {
             HashMap<String, String> map = new HashMap<>();
             session.parseBody(map);
             String body = map.get("postData");
-
             User postData = gson.fromJson(body, User.class);
             if (postData.getUsername() == null || postData.getHashedPassword() == null) {
                 return jsonError("Missing username or hashedPassword", NanoHTTPD.Response.Status.BAD_REQUEST);
             }
-
             User user = userRepo.findByUsernameAndPassword(postData.getUsername(), postData.getHashedPassword());
             if (user == null) {
                 return jsonError("Invalid credentials", NanoHTTPD.Response.Status.UNAUTHORIZED);
@@ -82,19 +78,18 @@ public class AuthRoutes implements RouteHandler {
             Session sessionObj = new Session();
             String sessionToken = UUID.randomUUID().toString();
             Date now = new Date();
-
             sessionObj.setUserId(user.getId());
             sessionObj.setSessionToken(sessionToken);
             sessionObj.setCreatedAt(now);
             sessionObj.setExpiresAt(new Date(now.getTime() + 24 * 60 * 60 * 1000));
-
             sessionRepo.insert(sessionObj);
 
             return json(gson.toJson(sessionToken));
         }
 
-        if ("/register".equals(subPath) && method == NanoHTTPD.Method.POST) {
-
+        // POST /auth/register
+        if (subPath.equals("/register") && method == NanoHTTPD.Method.POST) {
+            /// TODO register funcitonality
         }
 
         // If method not supported for this route
@@ -105,6 +100,12 @@ public class AuthRoutes implements RouteHandler {
         );
     }
 
+    /**
+     * Helper method to create JSON HTTP responses with CORS header.
+     *
+     * @param data JSON string response body
+     * @return NanoHTTPD.Response with JSON content type and CORS enabled
+     */
     private NanoHTTPD.Response json(String data) {
         NanoHTTPD.Response res = NanoHTTPD.newFixedLengthResponse(
                 NanoHTTPD.Response.Status.OK,
@@ -115,6 +116,13 @@ public class AuthRoutes implements RouteHandler {
         return res;
     }
 
+    /**
+     * Helper method to create JSON HTTP error responses with CORS header.
+     *
+     * @param message Error message to be included in the JSON response body
+     * @param status HTTP response status to set for the error
+     * @return NanoHTTPD.Response with JSON content type, specified status, and CORS enabled
+     */
     private NanoHTTPD.Response jsonError(String message, NanoHTTPD.Response.Status status) {
         NanoHTTPD.Response res = NanoHTTPD.newFixedLengthResponse(
                 status,

@@ -4,18 +4,14 @@ import org.bson.types.ObjectId;
 import org.bson.codecs.pojo.annotations.BsonId;
 
 public class User {
-    // MongoDB document ID, annotated as BSON ID for automatic mapping
+    public User() {}
+
+
     @BsonId
     private ObjectId id;
-
-    // Username of the user
     private String username;
-
-    // Hashed password of the user
     private String hashedPassword;
 
-    // No-argument constructor required for POJO mapping by MongoDB driver
-    public User() {}
 
     public ObjectId getId() {
         return id;

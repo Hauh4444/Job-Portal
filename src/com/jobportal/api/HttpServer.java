@@ -4,6 +4,7 @@ import fi.iki.elonen.NanoHTTPD;
 import com.jobportal.api.routes.RouteHandler;
 import com.jobportal.api.routes.AuthRoutes;
 import com.jobportal.api.routes.JobRoutes;
+import com.jobportal.api.routes.ProfileRoutes;
 import com.jobportal.api.routes.UserRoutes;
 
 import java.io.IOException;
@@ -11,18 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HttpServer extends NanoHTTPD {
-    // List to hold all route handler instances
     private final List<RouteHandler> routeHandlers = new ArrayList<>();
 
     public HttpServer() throws IOException {
-        super("0.0.0.0", 7000); // Initialize server on port 7000
+        super("0.0.0.0", 7000);
 
-        // Register all route handlers here
         routeHandlers.add(new AuthRoutes());
         routeHandlers.add(new JobRoutes());
+        routeHandlers.add(new ProfileRoutes());
         routeHandlers.add(new UserRoutes());
 
-        // Start the server with default socket timeout and non-daemon thread
         start(SOCKET_READ_TIMEOUT, false);
 
         System.out.println("Listening on http://0.0.0.0:7000");
@@ -38,22 +37,17 @@ public class HttpServer extends NanoHTTPD {
     @Override
     public Response serve(IHTTPSession session) {
         try {
-            // Iterate over registered route handlers
             for (RouteHandler handler : routeHandlers) {
-                // Delegate request to handler
                 Response res = handler.handle(session);
                 if (res != null) {
-                    // If handler returns a response, return it immediately
                     return res;
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            // Return internal server error if exception occurs
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Server Error");
         }
 
-        // Return 404 if no route handler processed the request
         return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not Found");
     }
 }

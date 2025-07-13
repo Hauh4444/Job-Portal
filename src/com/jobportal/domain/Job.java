@@ -7,51 +7,26 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Job {
-    // MongoDB document ID, annotated as BSON ID for automatic mapping
+    public Job() {}
+
+
     @BsonId
     private ObjectId id;
-
-    // Title of the job posting
     private String title;
-
-    // Company of the job listing
     private String company;
-
-    // Location of the job
     private String location;
-
-    // Type of employment (e.g. Full-time, Part-time, Contract)
     private String employmentType;
-
-    // Type of work model (e.g. Remote, On-Site, Hybrid)
     private String workModel;
-
-    // Minimum salary offered
     private float salaryMin;
-
-    // Maximum salary offered
     private float salaryMax;
-
-    // Description or details about the job
-    private String description;
-
-    // List of job requirements
+    private String descriptionShort;
+    private String descriptionLong;
     private ArrayList<String> requirements;
-
-    // List of job responsibilities
     private ArrayList<String> responsibilities;
-
-    // Date when the job was created/posted
     private Date createdAt;
-
-    // Date when the job posting expires
     private Date expiresAt;
-
-    // Contact email for applications
     private String contactEmail;
 
-    // No-argument constructor required for POJO mapping by MongoDB driver
-    public Job() {}
 
     public ObjectId getId() {
         return id;
@@ -117,12 +92,20 @@ public class Job {
         this.salaryMax = salaryMax;
     }
 
-    public String getDescription() {
-        return description;
+    public String getDescriptionShort() {
+        return descriptionShort;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setDescriptionShort(String descriptionShort) {
+        this.descriptionShort = descriptionShort;
+    }
+
+    public String getDescriptionLong() {
+        return descriptionLong;
+    }
+
+    public void setDescriptionLong(String descriptionLong) {
+        this.descriptionLong = descriptionLong;
     }
 
     public ArrayList<String> getRequirements() {
