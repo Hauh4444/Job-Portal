@@ -1,29 +1,25 @@
 package com.jobportal.api.routes;
 
-import com.jobportal.domain.User;
+import com.jobportal.domain.Profile;
 import com.jobportal.domain.Session;
-import com.jobportal.repo.UserRepository;
+import com.jobportal.repo.ProfileRepository;
 import com.jobportal.repo.SessionRepository;
 
 import com.google.gson.Gson;
 
 import fi.iki.elonen.NanoHTTPD;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UserRoutes implements RouteHandler {
+public class ProfileRoutes implements RouteHandler {
     private final Gson gson = new Gson();
-    private final UserRepository userRepo = new UserRepository();
+    private final ProfileRepository profileRepo = new ProfileRepository();;
     private final SessionRepository sessionRepo = new SessionRepository();
 
     /**
-     * Handle HTTP requests matching /user endpoint.
+     * Handle HTTP requests matching /profile endpoint.
      *
      * @param session the HTTP session containing the request data
      * @return NanoHTTPD.Response containing JSON data or error
@@ -34,45 +30,12 @@ public class UserRoutes implements RouteHandler {
         NanoHTTPD.Method method = session.getMethod();
         String uri = session.getUri();
 
-        final String endpoint = "/user";
+        final String endpoint = "/profile";
         String subPath = uri.substring(endpoint.length());
 
         if (!uri.startsWith(endpoint)) return null;
 
-        // GET /user/files
-        if (subPath.equals("/files") && method == NanoHTTPD.Method.GET) {
-            String authHeader = session.getHeaders().get("authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
-            String sessionToken = authHeader.substring("Bearer ".length());
-            Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
-            if (sessionObj == null) {
-                return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
-
-            Map<String, List<String>> decodedQueryParameters = session.getParameters();
-            String fileName = decodedQueryParameters.getOrDefault("file", List.of("")).get(0);
-            String filePath = "./uploads/" + sessionObj.getUserId() + "/" + fileName;
-            java.io.File src = new java.io.File(filePath);
-
-            if (!src.exists() || !src.isFile()) {
-                return jsonError("File not found", NanoHTTPD.Response.Status.NOT_FOUND);
-            }
-
-            FileInputStream fis = new FileInputStream(src);
-            NanoHTTPD.Response response = NanoHTTPD.newChunkedResponse(
-                    NanoHTTPD.Response.Status.OK,
-                    "application/octet-stream",
-                    fis
-            );
-            response.addHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
-            response.addHeader("Access-Control-Allow-Origin", "*");
-
-            return response;
-        }
-
-        // GET /user
+        // GET /profile
         if (method == NanoHTTPD.Method.GET) {
             String authHeader = session.getHeaders().get("authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -84,8 +47,46 @@ public class UserRoutes implements RouteHandler {
                 return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
             }
 
-            User user = userRepo.findById(sessionObj.getUserId());
-            return json(gson.toJson(user));
+            Profile profile = profileRepo.findByUserId(sessionObj.getUserId());
+
+            return json(gson.toJson(profile));
+        }
+
+        // PUT /profile/upload
+        if (subPath.equals("/upload") && method == NanoHTTPD.Method.POST) {
+            /// TODO Delete old file
+            String authHeader = session.getHeaders().get("authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
+            }
+            String sessionToken = authHeader.substring("Bearer ".length());
+            Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
+            if (sessionObj == null) {
+                return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
+            }
+
+            Map<String, String> map = new HashMap<>();
+            Map<String, List<String>> params = new HashMap<>();
+            session.parseBody(map);
+            params = session.getParameters();
+            String tempFilePath = map.get("file");
+            if (tempFilePath == null) {
+                return jsonError("No file uploaded", NanoHTTPD.Response.Status.BAD_REQUEST);
+            }
+            String fileName = null;
+            List<String> fileParam = params.get("file");
+            if (fileParam != null && !fileParam.isEmpty()) {
+                fileName = fileParam.get(0);
+            }
+
+            java.io.File src = new java.io.File(tempFilePath);
+            java.io.File dest = new java.io.File("./uploads/" + sessionObj.getUserId() + "/" + fileName);
+            dest.getParentFile().mkdirs();
+            java.nio.file.Files.copy(src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            profileRepo.updateResume(sessionObj.getUserId(), dest.getName());
+
+            return json(gson.toJson(Map.of("message", "File uploaded successfully")));
         }
 
         // If method not supported for this route
@@ -108,7 +109,7 @@ public class UserRoutes implements RouteHandler {
                 "application/json",
                 data
         );
-        res.addHeader("Access-Control-Allow-Origin", "*"); // Enable CORS for all origins
+        res.addHeader("Access-Control-Allow-Origin", "*");
         return res;
     }
 

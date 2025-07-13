@@ -1,8 +1,10 @@
 package com.jobportal.api.routes;
 
-import com.google.gson.Gson;
 import com.jobportal.domain.Job;
 import com.jobportal.repo.JobRepository;
+
+import com.google.gson.Gson;
+
 import fi.iki.elonen.NanoHTTPD;
 
 import java.util.HashMap;
@@ -10,11 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public class JobRoutes implements RouteHandler {
-    // Gson instance for JSON serialization/deserialization
     private final Gson gson = new Gson();
-
-    // Repository for interacting with Job data in MongoDB
-    private final JobRepository repo = new JobRepository();
+    private final JobRepository jobRepo = new JobRepository();
 
     /**
      * Handle HTTP requests matching /jobs endpoint.
@@ -28,30 +27,31 @@ public class JobRoutes implements RouteHandler {
         NanoHTTPD.Method method = session.getMethod();
         String uri = session.getUri();
 
-        // Only handle requests for "/jobs"
-        if (!"/jobs".equals(uri)) return null; // Not handled here, let other handlers try
+        final String endpoint = "/jobs";
+
+        if (!endpoint.equals(uri)) return null;
 
         // GET /jobs
         if (method == NanoHTTPD.Method.GET) {
-            // Retrieve all jobs from DB and return as JSON array
-            List<Job> jobs = repo.findAll();
+            List<Job> jobs = jobRepo.findAll();
+
             return json(gson.toJson(jobs));
         }
 
         // POST /jobs
         if (method == NanoHTTPD.Method.POST) {
-            // Parse request body JSON to Job object and insert into DB
             HashMap<String, String> map = new HashMap<>();
             session.parseBody(map);
             String body = map.get("postData");
             Job job = gson.fromJson(body, Job.class);
-            repo.insert(job);
+
+            jobRepo.insert(job);
+
             return json("{\"status\":\"ok\"}");
         }
 
         // DELETE /jobs
         if (method == NanoHTTPD.Method.DELETE) {
-            // Extract 'id' query parameter and delete matching job
             Map<String, List<String>> params = session.getParameters();
             List<String> ids = params.get("id");
             if (ids == null || ids.isEmpty()) {
@@ -62,7 +62,9 @@ public class JobRoutes implements RouteHandler {
                 );
             }
             String id = ids.get(0);
-            repo.delete(id);
+
+            jobRepo.delete(id);
+
             return json("{\"status\":\"deleted\"}");
         }
 
