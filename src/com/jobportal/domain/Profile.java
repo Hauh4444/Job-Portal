@@ -6,7 +6,6 @@ import org.bson.codecs.pojo.annotations.BsonId;
 public class Profile {
     public Profile() {}
 
-
     @BsonId
     private ObjectId id;
     private ObjectId userId;
@@ -16,7 +15,6 @@ public class Profile {
     private String country;
     private String location;
     private String resume;
-
 
     public ObjectId getId() {
         return id;

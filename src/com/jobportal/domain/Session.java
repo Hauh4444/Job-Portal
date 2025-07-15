@@ -8,14 +8,12 @@ import java.util.Date;
 public class Session {
     public Session() {}
 
-
     @BsonId
     private ObjectId id;
     private ObjectId userId;
     private String sessionToken;
     private Date createdAt;
     private Date expiresAt;
-
 
     public ObjectId getId() {
         return id;

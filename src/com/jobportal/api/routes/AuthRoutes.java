@@ -4,6 +4,8 @@ import com.jobportal.domain.User;
 import com.jobportal.domain.Session;
 import com.jobportal.repo.UserRepository;
 import com.jobportal.repo.SessionRepository;
+import com.jobportal.api.services.AuthServices;
+import com.jobportal.api.exceptions.UnauthorizedException;
 
 import com.google.gson.Gson;
 
@@ -38,27 +40,18 @@ public class AuthRoutes implements RouteHandler {
         if (!uri.startsWith(endpoint)) return null;
 
         if (subPath.equals("/check_auth_status") && method == NanoHTTPD.Method.GET) {
-            String authHeader = session.getHeaders().get("authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
-            String sessionToken = authHeader.substring("Bearer ".length());
-            Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
-            if (sessionObj == null) {
-                return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
+            try {
+                Session sessionObj = AuthServices.validateSession(session);
 
-            Date now = new Date();
-            if (sessionObj.getExpiresAt().before(now)) {
-                return jsonError("Session expired", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
+                User user = userRepo.findById(sessionObj.getUserId());
+                if (user == null) {
+                    return jsonError("User not found", NanoHTTPD.Response.Status.UNAUTHORIZED);
+                }
 
-            User user = userRepo.findById(sessionObj.getUserId());
-            if (user == null) {
-                return jsonError("User not found", NanoHTTPD.Response.Status.UNAUTHORIZED);
+                return json(gson.toJson(Map.of("id", user.getId(), "username", user.getUsername())));
+            } catch (UnauthorizedException e) {
+                return jsonError(e.getMessage(), e.getStatus());
             }
-
-            return json(gson.toJson(Map.of("id", user.getId(), "username", user.getUsername())));
         }
 
         // POST /auth/login
@@ -66,30 +59,27 @@ public class AuthRoutes implements RouteHandler {
             HashMap<String, String> map = new HashMap<>();
             session.parseBody(map);
             String body = map.get("postData");
-            User postData = gson.fromJson(body, User.class);
-            if (postData.getUsername() == null || postData.getHashedPassword() == null) {
-                return jsonError("Missing username or hashedPassword", NanoHTTPD.Response.Status.BAD_REQUEST);
-            }
-            User user = userRepo.findByUsernameAndPassword(postData.getUsername(), postData.getHashedPassword());
-            if (user == null) {
-                return jsonError("Invalid credentials", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
+
+            User loginData = gson.fromJson(body, User.class);
+            if (loginData.getUsername() == null) return jsonError("Missing username", NanoHTTPD.Response.Status.BAD_REQUEST);
+            if (loginData.getHashedPassword() == null) return jsonError("Missing password", NanoHTTPD.Response.Status.BAD_REQUEST);
+
+            User user = userRepo.findByUsernameAndPassword(loginData.getUsername(), loginData.getHashedPassword());
+            if (user == null) return jsonError("Invalid credentials", NanoHTTPD.Response.Status.UNAUTHORIZED);
 
             Session sessionObj = new Session();
-            String sessionToken = UUID.randomUUID().toString();
-            Date now = new Date();
             sessionObj.setUserId(user.getId());
-            sessionObj.setSessionToken(sessionToken);
-            sessionObj.setCreatedAt(now);
-            sessionObj.setExpiresAt(new Date(now.getTime() + 24 * 60 * 60 * 1000));
+            sessionObj.setSessionToken(UUID.randomUUID().toString());
+            sessionObj.setCreatedAt(new Date());
+            sessionObj.setExpiresAt(new Date((new Date()).getTime() + 24 * 60 * 60 * 1000));
             sessionRepo.insert(sessionObj);
 
-            return json(gson.toJson(sessionToken));
+            return json(gson.toJson(sessionObj.getSessionToken()));
         }
 
         // POST /auth/register
         if (subPath.equals("/register") && method == NanoHTTPD.Method.POST) {
-            /// TODO register funcitonality
+            /// TODO Register funcitonality
         }
 
         // If method not supported for this route

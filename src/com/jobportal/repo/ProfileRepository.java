@@ -1,37 +1,20 @@
 package com.jobportal.repo;
 
 import com.jobportal.domain.Profile;
+import com.jobportal.config.MongoDBUtil;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
 
 import org.bson.types.ObjectId;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
-import static org.bson.codecs.configuration.CodecRegistries.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ProfileRepository {
     private final MongoCollection<Profile> profiles;
 
     public ProfileRepository() {
-        CodecRegistry pojoCodecRegistry = fromProviders(PojoCodecProvider.builder().automatic(true).build());
-        CodecRegistry codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
-        ConnectionString connString = new ConnectionString("mongodb://localhost:27017/jobportal");
-        MongoClientSettings settings = MongoClientSettings.builder()
-                .applyConnectionString(connString)
-                .codecRegistry(codecRegistry)
-                .build();
-        MongoClient client = MongoClients.create(settings);
-        MongoDatabase db = client.getDatabase("jobportal");
+        MongoDatabase db = MongoDBUtil.initializeMongoDB();
         profiles = db.getCollection("profiles", Profile.class);
     }
 
@@ -41,5 +24,15 @@ public class ProfileRepository {
 
     public void updateResume(ObjectId userId, String resume) {
         profiles.updateOne(Filters.eq("userId", userId), Updates.set("resume", resume));
+    }
+
+    public void updateProfile(ObjectId userId, Profile profile) {
+        profiles.updateOne(Filters.eq("userId", userId), Updates.combine(
+                Updates.set("name", profile.getName()),
+                Updates.set("email", profile.getEmail()),
+                Updates.set("phone", profile.getPhone()),
+                Updates.set("country", profile.getCountry()),
+                Updates.set("location", profile.getLocation())
+        ));
     }
 }
