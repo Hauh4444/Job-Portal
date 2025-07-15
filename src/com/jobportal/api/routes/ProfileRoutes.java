@@ -4,6 +4,8 @@ import com.jobportal.domain.Profile;
 import com.jobportal.domain.Session;
 import com.jobportal.repo.ProfileRepository;
 import com.jobportal.repo.SessionRepository;
+import com.jobportal.api.services.AuthServices;
+import com.jobportal.api.exceptions.UnauthorizedException;
 
 import com.google.gson.Gson;
 
@@ -15,7 +17,7 @@ import java.util.Map;
 
 public class ProfileRoutes implements RouteHandler {
     private final Gson gson = new Gson();
-    private final ProfileRepository profileRepo = new ProfileRepository();;
+    private final ProfileRepository profileRepo = new ProfileRepository();
     private final SessionRepository sessionRepo = new SessionRepository();
 
     /**
@@ -37,56 +39,67 @@ public class ProfileRoutes implements RouteHandler {
 
         // GET /profile
         if (method == NanoHTTPD.Method.GET) {
-            String authHeader = session.getHeaders().get("authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
-            String sessionToken = authHeader.substring("Bearer ".length());
-            Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
-            if (sessionObj == null) {
-                return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
+            try {
+                Session sessionObj = AuthServices.validateSession(session);
 
-            Profile profile = profileRepo.findByUserId(sessionObj.getUserId());
+                Profile profile = profileRepo.findByUserId(sessionObj.getUserId());
 
-            return json(gson.toJson(profile));
+                return json(gson.toJson(profile));
+            } catch (UnauthorizedException e) {
+                return jsonError(e.getMessage(), e.getStatus());
+            }
         }
 
-        // PUT /profile/upload
+        // POST /profile/upload (UPDATE)
         if (subPath.equals("/upload") && method == NanoHTTPD.Method.POST) {
-            /// TODO Delete old file
-            String authHeader = session.getHeaders().get("authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
-            String sessionToken = authHeader.substring("Bearer ".length());
-            Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
-            if (sessionObj == null) {
-                return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
+            try {
+                Session sessionObj = AuthServices.validateSession(session);
 
-            Map<String, String> map = new HashMap<>();
-            Map<String, List<String>> params = new HashMap<>();
-            session.parseBody(map);
-            params = session.getParameters();
-            String tempFilePath = map.get("file");
-            if (tempFilePath == null) {
-                return jsonError("No file uploaded", NanoHTTPD.Response.Status.BAD_REQUEST);
+                Map<String, String> map = new HashMap<>();
+                Map<String, List<String>> params = new HashMap<>();
+                session.parseBody(map);
+                params = session.getParameters();
+
+                String filePath = map.get("file");
+                if (filePath == null) return jsonError("No file uploaded", NanoHTTPD.Response.Status.BAD_REQUEST);
+                String fileName = null;
+                List<String> fileParam = params.get("file");
+                if (fileParam != null && !fileParam.isEmpty()) fileName = fileParam.get(0);
+
+                java.io.File src = new java.io.File(filePath);
+                java.io.File dest = new java.io.File("./uploads/" + sessionObj.getUserId() + "/" + fileName);
+                dest.getParentFile().mkdirs();
+                java.nio.file.Files.copy(src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+                Profile profile = profileRepo.findByUserId(sessionObj.getUserId());
+                java.io.File oldFile = new java.io.File("./uploads/" + sessionObj.getUserId() + "/" + profile.getResume());
+                oldFile.delete();
+
+                profileRepo.updateResume(sessionObj.getUserId(), dest.getName());
+
+                return json(gson.toJson(Map.of("message", "File uploaded successfully")));
+            } catch (UnauthorizedException e) {
+                return jsonError(e.getMessage(), e.getStatus());
             }
-            String fileName = null;
-            List<String> fileParam = params.get("file");
-            if (fileParam != null && !fileParam.isEmpty()) {
-                fileName = fileParam.get(0);
+        }
+
+        // POST /profile (UPDATE)
+        if (method == NanoHTTPD.Method.POST) {
+            try {
+                Session sessionObj = AuthServices.validateSession(session);
+
+                Map<String, String> map = new HashMap<>();
+                session.parseBody(map);
+                String body = map.get("postData");
+
+                Profile profile = gson.fromJson(body, Profile.class);
+
+                profileRepo.updateProfile(sessionObj.getUserId(), profile);
+
+                return json(gson.toJson(Map.of("message", "Profile updated successfully")));
+            } catch (UnauthorizedException e) {
+                return jsonError(e.getMessage(), e.getStatus());
             }
-
-            java.io.File src = new java.io.File(tempFilePath);
-            java.io.File dest = new java.io.File("./uploads/" + sessionObj.getUserId() + "/" + fileName);
-            dest.getParentFile().mkdirs();
-            java.nio.file.Files.copy(src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
-            profileRepo.updateResume(sessionObj.getUserId(), dest.getName());
-
-            return json(gson.toJson(Map.of("message", "File uploaded successfully")));
         }
 
         // If method not supported for this route

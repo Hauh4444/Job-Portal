@@ -7,7 +7,7 @@ A backend REST API service for the Job Portal app, built with Java. This backend
 
 ## Features
 
-- RESTful API endpoints for jobs, users, applications, and employers
+- RESTful API endpoints for jobs, users, profiles, and applications
 - Session based user authentication and authorization
 - MongoDB database integration for data persistence
 - Dockerized MongoDB setup for easy development and testing

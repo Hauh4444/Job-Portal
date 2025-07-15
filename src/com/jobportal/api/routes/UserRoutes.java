@@ -4,6 +4,8 @@ import com.jobportal.domain.User;
 import com.jobportal.domain.Session;
 import com.jobportal.repo.UserRepository;
 import com.jobportal.repo.SessionRepository;
+import com.jobportal.api.services.AuthServices;
+import com.jobportal.api.exceptions.UnauthorizedException;
 
 import com.google.gson.Gson;
 
@@ -41,51 +43,43 @@ public class UserRoutes implements RouteHandler {
 
         // GET /user/files
         if (subPath.equals("/files") && method == NanoHTTPD.Method.GET) {
-            String authHeader = session.getHeaders().get("authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
+            /// TODO Send snapshot instead of full file
+            try {
+                Session sessionObj = AuthServices.validateSession(session);
+
+                Map<String, List<String>> decodedQueryParameters = session.getParameters();
+                String fileName = decodedQueryParameters.getOrDefault("file", List.of("")).get(0);
+                String filePath = "./uploads/" + sessionObj.getUserId() + "/" + fileName;
+                java.io.File src = new java.io.File(filePath);
+
+                if (!src.exists() || !src.isFile()) return jsonError("File not found", NanoHTTPD.Response.Status.NOT_FOUND);
+
+                FileInputStream fis = new FileInputStream(src);
+                NanoHTTPD.Response response = NanoHTTPD.newChunkedResponse(
+                        NanoHTTPD.Response.Status.OK,
+                        "application/octet-stream",
+                        fis
+                );
+                response.addHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
+                response.addHeader("Access-Control-Allow-Origin", "*");
+
+                return response;
+            } catch (UnauthorizedException e) {
+                return jsonError(e.getMessage(), e.getStatus());
             }
-            String sessionToken = authHeader.substring("Bearer ".length());
-            Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
-            if (sessionObj == null) {
-                return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
-
-            Map<String, List<String>> decodedQueryParameters = session.getParameters();
-            String fileName = decodedQueryParameters.getOrDefault("file", List.of("")).get(0);
-            String filePath = "./uploads/" + sessionObj.getUserId() + "/" + fileName;
-            java.io.File src = new java.io.File(filePath);
-
-            if (!src.exists() || !src.isFile()) {
-                return jsonError("File not found", NanoHTTPD.Response.Status.NOT_FOUND);
-            }
-
-            FileInputStream fis = new FileInputStream(src);
-            NanoHTTPD.Response response = NanoHTTPD.newChunkedResponse(
-                    NanoHTTPD.Response.Status.OK,
-                    "application/octet-stream",
-                    fis
-            );
-            response.addHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
-            response.addHeader("Access-Control-Allow-Origin", "*");
-
-            return response;
         }
 
         // GET /user
         if (method == NanoHTTPD.Method.GET) {
-            String authHeader = session.getHeaders().get("authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return jsonError("Missing or invalid Authorization header", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
-            String sessionToken = authHeader.substring("Bearer ".length());
-            Session sessionObj = sessionRepo.findBySessionToken(sessionToken);
-            if (sessionObj == null) {
-                return jsonError("Invalid session token", NanoHTTPD.Response.Status.UNAUTHORIZED);
-            }
+            try {
+                Session sessionObj = AuthServices.validateSession(session);
 
-            User user = userRepo.findById(sessionObj.getUserId());
-            return json(gson.toJson(user));
+                User user = userRepo.findById(sessionObj.getUserId());
+
+                return json(gson.toJson(user));
+            } catch (UnauthorizedException e) {
+                return jsonError(e.getMessage(), e.getStatus());
+            }
         }
 
         // If method not supported for this route

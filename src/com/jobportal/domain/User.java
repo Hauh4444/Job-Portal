@@ -6,12 +6,10 @@ import org.bson.codecs.pojo.annotations.BsonId;
 public class User {
     public User() {}
 
-
     @BsonId
     private ObjectId id;
     private String username;
     private String hashedPassword;
-
 
     public ObjectId getId() {
         return id;

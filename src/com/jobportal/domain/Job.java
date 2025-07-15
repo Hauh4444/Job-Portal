@@ -9,7 +9,6 @@ import java.util.Date;
 public class Job {
     public Job() {}
 
-
     @BsonId
     private ObjectId id;
     private String title;
@@ -26,7 +25,6 @@ public class Job {
     private Date createdAt;
     private Date expiresAt;
     private String contactEmail;
-
 
     public ObjectId getId() {
         return id;
