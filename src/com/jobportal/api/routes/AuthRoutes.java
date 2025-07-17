@@ -36,7 +36,6 @@ public class AuthRoutes implements RouteHandler {
 
         final String endpoint = "/auth";
         String subPath = uri.substring(endpoint.length());
-
         if (!uri.startsWith(endpoint)) return null;
 
         if (subPath.equals("/check_auth_status") && method == NanoHTTPD.Method.GET) {
