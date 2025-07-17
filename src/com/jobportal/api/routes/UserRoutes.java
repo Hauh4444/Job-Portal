@@ -3,7 +3,6 @@ package com.jobportal.api.routes;
 import com.jobportal.domain.User;
 import com.jobportal.domain.Session;
 import com.jobportal.repo.UserRepository;
-import com.jobportal.repo.SessionRepository;
 import com.jobportal.api.services.AuthServices;
 import com.jobportal.api.exceptions.UnauthorizedException;
 
@@ -22,7 +21,6 @@ import java.util.Map;
 public class UserRoutes implements RouteHandler {
     private final Gson gson = new Gson();
     private final UserRepository userRepo = new UserRepository();
-    private final SessionRepository sessionRepo = new SessionRepository();
 
     /**
      * Handle HTTP requests matching /user endpoint.
@@ -38,7 +36,6 @@ public class UserRoutes implements RouteHandler {
 
         final String endpoint = "/user";
         String subPath = uri.substring(endpoint.length());
-
         if (!uri.startsWith(endpoint)) return null;
 
         // GET /user/files

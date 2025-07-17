@@ -19,7 +19,7 @@ A backend REST API service for the Job Portal app, built with Java. This backend
 - **Build Tool:** javac, Java CLI
 - **Database:** MongoDB
 - **Containerization:** Docker (for MongoDB)
-- **Libraries:** MongoDB Java Driver, JSON parsing libraries, JWT (for auth)
+- **Libraries:** MongoDB Java Driver, JSON parsing libraries
 
 ## Prerequisites
 
@@ -53,7 +53,7 @@ Compile the Java source code with dependencies:
 ```bash
 javac -cp "libs/*" -d out -sourcepath src $(find src -name "*.java")
 ```
-- `libs/*` refers to the folder containing required JAR dependencies (MongoDB driver, JWT libs, etc.)
+- `libs/*` refers to the folder containing required JAR dependencies (MongoDB driver, etc.)
 - `src` contains your Java source files
 - `out` is the output directory for compiled `.class` files
 
