@@ -1,0 +1,54 @@
+Primary Colors
+
+
+Charcoal Black: #0F0F0F — bold for text and nav
+
+Soft Indigo: #6366F1 — modern primary accent (used in CTA buttons, links)
+
+Blurple Gradient Start: #7C3AED
+
+Blurple Gradient End: #6366F1
+
+
+Backgrounds
+
+
+Pure White: #FFFFFF — main background
+
+Off White: #F9FAFB — cards and sections
+
+Light Gray: #E5E7EB — subtle borders, lines
+
+
+Text / Neutrals
+
+
+Almost Black: #111827 — for primary text
+
+Slate Gray: #6B7280 — for secondary text
+
+Cool Gray: #9CA3AF — placeholders, captions
+
+
+Success / Warning / Error
+
+
+Mint Green: #10B981 — success (e.g. applied jobs, completed actions)
+
+Amber: #FBBF24 — warning (e.g. expiring job)
+
+Soft Red: #EF4444 — error, delete, invalid input
+
+
+Accent Option (Optional)
+
+
+Vibrant Coral: #FB7185 — Warm, energetic (recommended)
+
+Rose Pink: #F472B6 — Softer pink, more playful
+
+Sunset Orange: #F97316 — Bold, warm, draws attention
+
+Lavender Sky: #C4B5FD — Soft harmony with Blurple tones
+
+Teal Green: #14B8A6 — Cooler than coral but softer than cyan
